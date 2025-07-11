@@ -1,0 +1,27 @@
+{
+  "canisters": {
+    "afya_project_backend": {
+      "candid": "src/afya_project_backend/afya_project_backend.did",
+      "package": "afya_project_backend",
+      "type": "rust"
+    },
+    "afya_project_frontend": {
+      "dependencies": [
+        "afya_project_backend"
+      ],
+      "source": [
+        "src/afya_project_frontend/dist"
+      ],
+      "type": "assets",
+      "workspace": "afya_project_frontend"
+    }
+  },
+  "defaults": {
+    "build": {
+      "args": "",
+      "packtool": ""
+    }
+  },
+  "output_env_file": ".env",
+  "version": 1
+}
