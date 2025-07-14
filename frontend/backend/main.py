@@ -22,6 +22,8 @@ app.add_middleware(
 GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent"
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "YOUR_GEMINI_API_KEY")
 
+notifications_store = {}
+
 @app.post("/api/chat")
 async def chat(request: Request):
     data = await request.json()
@@ -48,4 +50,21 @@ async def llm_recommendation(request: Request):
         response = model.generate_content(prompt)
         return {"recommendation": response.text}
     except Exception as e:
-        return JSONResponse(status_code=500, content={"recommendation": f"Error: {str(e)}"}) 
+        return JSONResponse(status_code=500, content={"recommendation": f"Error: {str(e)}"})
+
+@app.post("/api/notify_user")
+async def notify_user(request: Request):
+    data = await request.json()
+    user_id = data.get("user_id")
+    message = data.get("message")
+    if not user_id or not message:
+        return JSONResponse(status_code=400, content={"error": "user_id and message required"})
+    notifications_store.setdefault(user_id, []).append({
+        "message": message,
+        "read": False
+    })
+    return {"status": "ok"}
+
+@app.get("/api/get_notifications")
+async def get_notifications(user_id: str):
+    return {"notifications": notifications_store.get(user_id, [])} 

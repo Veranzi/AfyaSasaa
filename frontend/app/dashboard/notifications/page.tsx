@@ -1,47 +1,11 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Bell, AlertTriangle, CheckCircle, Info, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-const mockNotifications = [
-  {
-    id: 1,
-    type: "info",
-    message: "New patient registered: Jane Doe.",
-    date: "2024-04-20 09:15",
-    read: false,
-  },
-  {
-    id: 2,
-    type: "warning",
-    message: "Inventory low: FBC (Full Blood Count) at Machakos Level 5 Hospital.",
-    date: "2024-04-19 16:40",
-    read: false,
-  },
-  {
-    id: 3,
-    type: "success",
-    message: "Treatment report generated for Pumwani Maternity Hospital.",
-    date: "2024-04-19 14:10",
-    read: true,
-  },
-  {
-    id: 4,
-    type: "error",
-    message: "Failed to sync inventory data from Garissa County Referral Hospital.",
-    date: "2024-04-18 18:22",
-    read: false,
-  },
-  {
-    id: 5,
-    type: "info",
-    message: "NHIF coverage report available for download.",
-    date: "2024-04-18 10:05",
-    read: true,
-  },
-];
+const USER_ID = typeof window !== "undefined" ? localStorage.getItem("patientId") || "demo-user" : "demo-user";
 
 const typeIcon = {
   info: Info,
@@ -56,8 +20,34 @@ const typeColor = {
   error: "bg-red-100 text-red-700",
 };
 
+type Notification = {
+  id: number;
+  type: string;
+  message: string;
+  date: string;
+  read: boolean;
+};
+
 export default function NotificationsPage() {
-  const [notifications, setNotifications] = useState(mockNotifications);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+
+  const fetchNotifications = async () => {
+    const res = await fetch(`/api/get_notifications?user_id=${USER_ID}`);
+    const data = await res.json();
+    setNotifications((data.notifications || []).map((n: any, idx: number): Notification => ({
+      ...n,
+      id: idx + 1,
+      type: "info",
+      date: new Date().toLocaleString(),
+      read: n.read ?? false,
+    })));
+  };
+
+  useEffect(() => {
+    fetchNotifications();
+    window.addEventListener("focus", fetchNotifications);
+    return () => window.removeEventListener("focus", fetchNotifications);
+  }, []);
 
   const markAsRead = (id: number) => {
     setNotifications(notifications.map(n => n.id === id ? { ...n, read: true } : n));
@@ -86,10 +76,11 @@ export default function NotificationsPage() {
               <div className="text-gray-400 text-sm">You're all caught up.</div>
             </CardContent>
           </Card>
-        ) : notifications.map(n => {
-          const Icon = typeIcon[n.type];
+        ) : notifications.map((n: Notification) => {
+          const Icon = typeIcon[n.type as keyof typeof typeIcon] || Info;
+          const colorClass = typeColor[n.type as keyof typeof typeColor] || typeColor.info;
           return (
-            <Card key={n.id} className={`border-l-4 ${typeColor[n.type]}`.replace(' ', ' ')}>
+            <Card key={n.id} className={`border-l-4 ${colorClass}`.replace(' ', ' ')}>
               <CardHeader className="flex flex-row items-center gap-3 pb-2">
                 <Icon className="h-6 w-6" />
                 <CardTitle className="text-base font-semibold flex-1">{n.message}</CardTitle>

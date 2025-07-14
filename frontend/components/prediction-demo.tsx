@@ -12,6 +12,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { useGoogleSheet } from "@/hooks/useGoogleSheet"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import React, { useRef } from "react"
+import { toast } from "sonner";
 
 const OVARIAN_DATA_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSOrLbxUb6jmar3LIp2tFGHHimYL7Tl6zZTRNqJohoWBaq7sk0UHkxTKPwknP3muI5rx2kE6PwSyrKk/pub?gid=0&single=true&output=csv";
 
@@ -175,6 +176,18 @@ export function PredictionDemo() {
       });
       const result = await response.json();
       setFollowupResponse(result.data?.data?.followup || "No answer returned.");
+      // Notify user after follow-up
+      if (patientId) {
+        await fetch("/api/notify_user", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            user_id: patientId,
+            message: "Your clinician has reviewed your case and added a follow-up."
+          })
+        });
+        toast.success("User notified of follow-up.");
+      }
     } catch (error) {
       setFollowupResponse("Error: " + (error instanceof Error ? error.message : String(error)));
     }
