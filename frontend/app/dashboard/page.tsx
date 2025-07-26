@@ -60,7 +60,10 @@ export default function DashboardHomePage() {
           </div>
         </div>
         <div className="flex flex-wrap gap-4 mb-8">
-          <a href="/dashboard/appointments" className="bg-blue-600 text-white px-4 py-2 rounded shadow hover:bg-blue-700">Book Appointment</a>
+          <a href="/dashboard/appointments" className="bg-blue-600 text-white px-4 py-2 rounded shadow hover:bg-blue-700 flex items-center gap-2">
+            <Calendar className="w-5 h-5" />
+            Book Appointment
+          </a>
           <a href="/dashboard/appointments/patient-page" className="bg-blue-700 text-white px-4 py-2 rounded shadow hover:bg-blue-800 flex items-center gap-2">
             <Calendar className="w-5 h-5" />
             View Appointments
