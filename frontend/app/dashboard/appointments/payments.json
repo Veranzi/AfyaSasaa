@@ -1,0 +1,46 @@
+[
+  {
+    "id": "pay-001",
+    "patientId": "pat-001",
+    "patientName": "Jane Doe",
+    "serviceType": "Consultation",
+    "paymentType": "before_appointment",
+    "amount": 2000,
+    "status": "paid",
+    "date": "2024-06-30T15:00:00Z",
+    "details": "Payment for consultation appointment."
+  },
+  {
+    "id": "pay-002",
+    "patientId": "pat-002",
+    "patientName": "Alice Smith",
+    "serviceType": "Medication",
+    "paymentType": "after_service",
+    "amount": 1500,
+    "status": "paid",
+    "date": "2024-07-02T16:00:00Z",
+    "details": "Payment for prescribed medication after appointment."
+  },
+  {
+    "id": "pay-003",
+    "patientId": "pat-004",
+    "patientName": "Linda Okoth",
+    "serviceType": "Surgery",
+    "paymentType": "after_service",
+    "amount": 25000,
+    "status": "pending",
+    "date": "2024-07-04T13:00:00Z",
+    "details": "Payment for ovarian cyst surgery."
+  },
+  {
+    "id": "pay-004",
+    "patientId": "pat-003",
+    "patientName": "Grace Kim",
+    "serviceType": "Referral",
+    "paymentType": "after_service",
+    "amount": 500,
+    "status": "paid",
+    "date": "2024-07-03T12:00:00Z",
+    "details": "Payment for referral to specialist."
+  }
+] 

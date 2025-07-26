@@ -37,10 +37,10 @@ export default function BlogsPage() {
               <Image src="/OvaryCyst.png" alt="Ovary Cyst" fill className="object-cover" />
             </div>
             <div className="p-6 flex-1 flex flex-col">
-              <h2 className="text-xl font-bold mb-2 text-gray-900">Understanding Ovarian Cysts: Clinical Insights</h2>
-              <div className="text-sm text-gray-500 mb-2">Author: Dr Goodness Nwokebu &bull; Date: 6th July 2025</div>
-              <p className="text-gray-700 mb-4 flex-1">Ovarian cysts are fluid-filled sacs that develop on or within an ovary. While most cysts are benign and asymptomatic, some can cause significant clinical symptoms or indicate underlying pathology. Learn about types, risk factors, and management strategies.</p>
-              <a href="#" className="block w-full mt-auto">
+              <h2 className="text-xl font-bold mb-2 text-gray-900">Symptoms and Medications: Clinical Presentation & Pharmacologic Management</h2>
+              <div className="text-sm text-gray-500 mb-2">Author: Pharm. Goodness Nwokebu &bull; Date: 6th July 2025</div>
+              <p className="text-gray-700 mb-4 flex-1">Discover the key symptoms of ovarian cysts, how they present clinically, and the latest pharmacologic strategies for symptom control and cyst resolution. This article also addresses barriers to care and the importance of early intervention in African healthcare settings.</p>
+              <a href="https://ayfasasa.blogspot.com/2025/07/symptoms-and-medications.html" target="_blank" rel="noopener noreferrer" className="block w-full mt-auto">
                 <button className="w-full bg-yellow-500 hover:bg-yellow-600 text-white font-semibold py-2 rounded-lg transition">READ MORE</button>
               </a>
             </div>
@@ -51,10 +51,10 @@ export default function BlogsPage() {
               <Image src="/ovarianCyst.png" alt="Ovarian Cyst" fill className="object-cover" />
             </div>
             <div className="p-6 flex-1 flex flex-col">
-              <h2 className="text-xl font-bold mb-2 text-gray-900">Management of Ovarian Cysts in Adolescents</h2>
-              <div className="text-sm text-gray-500 mb-2">Author: Dr Goodness Nwokebu &bull; Date: 7th July 2025</div>
-              <p className="text-gray-700 mb-4 flex-1">A practical guide to the diagnosis and management of ovarian cysts in adolescent patients, including when to observe, when to refer, and how to counsel families about prognosis and fertility.</p>
-              <a href="#" className="block w-full mt-auto">
+              <h2 className="text-xl font-bold mb-2 text-gray-900">Ovarian Cysts in Pregnancy: Diagnosis & Management</h2>
+              <div className="text-sm text-gray-500 mb-2">Author: Pharm. Goodness Nwokebu &bull; Date: 7th July 2025</div>
+              <p className="text-gray-700 mb-4 flex-1">Learn about the diagnosis, types, and management of ovarian cysts during pregnancy. This post covers imaging, monitoring, when to intervene surgically, and how to handle complications like torsion or rupture, with practical follow-up advice for clinicians.</p>
+              <a href="https://ayfasasa.blogspot.com/2025/07/ovarian-cysts-in-pregnancy.html" target="_blank" rel="noopener noreferrer" className="block w-full mt-auto">
                 <button className="w-full bg-yellow-500 hover:bg-yellow-600 text-white font-semibold py-2 rounded-lg transition">READ MORE</button>
               </a>
             </div>

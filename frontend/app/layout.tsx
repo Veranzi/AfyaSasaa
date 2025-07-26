@@ -1,3 +1,5 @@
+import { ThemeProvider } from '@/components/theme-provider'
+import { UserProvider } from '@/context/UserContext'
 import type { Metadata } from 'next'
 import './globals.css'
 
@@ -14,7 +16,17 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        <UserProvider>
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="system"
+            enableSystem
+          >
+            {children}
+          </ThemeProvider>
+        </UserProvider>
+      </body>
     </html>
   )
 }

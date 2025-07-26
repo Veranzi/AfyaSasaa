@@ -1,6 +1,11 @@
 "use client";
 import { Dashboard } from "@/components/dashboard";
+import RoleGuard from "@/components/RoleGuard";
 
 export default function TreatmentPage() {
-  return <Dashboard initialTab="treatment" />;
+  return (
+    <RoleGuard allowed={["clinician", "admin"]}>
+      <Dashboard initialTab="treatment" />
+    </RoleGuard>
+  );
 } 

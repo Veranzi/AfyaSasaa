@@ -12,7 +12,9 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { useGoogleSheet } from "@/hooks/useGoogleSheet"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import React, { useRef } from "react"
-import { toast } from "sonner";
+import { db } from "@/lib/firebase";
+import { collection, addDoc } from "firebase/firestore";
+import { useUserContext } from "@/context/UserContext";
 
 const OVARIAN_DATA_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSOrLbxUb6jmar3LIp2tFGHHimYL7Tl6zZTRNqJohoWBaq7sk0UHkxTKPwknP3muI5rx2kE6PwSyrKk/pub?gid=0&single=true&output=csv";
 
@@ -54,7 +56,7 @@ export function PredictionDemo() {
     "What causes ovarian cysts to form?",
     "Are there different types of ovarian cysts?"
   ])
-  const [age, setAge] = useState(18)
+  const [age, setAge] = useState(12)
   const [menopause, setMenopause] = useState(MENOPAUSE_OPTIONS[0])
   const [size, setSize] = useState(1)
   const [growth, setGrowth] = useState(0)
@@ -75,6 +77,8 @@ export function PredictionDemo() {
   const [patientName, setPatientName] = useState("");
   const [patientId, setPatientId] = useState("");
   const printRef = useRef<HTMLDivElement>(null);
+  const [othersSymptom, setOthersSymptom] = useState(false);
+  const { user } = useUserContext();
 
   // Helper for rendering probabilities safely
   const probabilityEntries: [string, number][] = probabilities
@@ -100,8 +104,8 @@ export function PredictionDemo() {
     setConfidencePercent(null);
     setFollowupResponse("");
     // Range validation
-    if (age < 18 || age > 90) {
-      setError("Age must be between 18 and 90."); return;
+    if (age < 12 || age > 90) {
+      setError("Age must be between 12 and 90."); return;
     }
     if (size < 0.1 || size > 20) {
       setError("Cyst size must be between 0.1 and 20 cm."); return;
@@ -114,80 +118,68 @@ export function PredictionDemo() {
     }
     setLoading(true)
     const payload = {
-      data: [
-        age,
-        menopause,
-        size,
-        growth,
-        ca125,
-        ultrasound,
-        symptoms.join(", ")
-      ]
-    }
+      age,
+      menopause_status: menopause,
+      cyst_size_cm: size,
+      cyst_growth_rate: growth,
+      ca125_level: ca125,
+      ultrasound_features: ultrasound,
+      symptoms: symptoms.join(", ")
+    };
     try {
-      const response = await fetch("https://veranziverah.app.modelbit.com/v1/predict_ovarian_cyst_managementt/latest", {
+      const response = await fetch("https://afyasasa-llm.onrender.com/predict-management", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
-      })
-      const data = await response.json()
-      if (data.data) {
-        const { predicted_class, confidence_percent, interpretation, probabilities, llm_report } = data.data;
-        setPredictedClass(predicted_class);
-        setConfidencePercent(confidence_percent);
-        setInterpretation(interpretation);
-        setLlmReport(llm_report);
-        setProbabilities(probabilities);
+      });
+      const data = await response.json();
+      if (data.interpretation) {
+        setPredictedClass(data.predicted_class);
+        setConfidencePercent(data.confidence);
+        setProbabilities(data.probabilities);
+        setInterpretation(data.interpretation);
         let probText = "";
-        if (probabilities && typeof probabilities === 'object') {
+        if (data.probabilities && typeof data.probabilities === 'object') {
           probText = "Probabilities:\n";
-          for (const [label, prob] of Object.entries(probabilities)) {
-            probText += `- ${label}: ${(prob * 100).toFixed(2)}%\n`;
+          for (const [label, prob] of Object.entries(data.probabilities)) {
+            probText += `- ${label}: ${((prob as number) * 100).toFixed(2)}%\n`;
           }
         }
         setResult(
-          `Prediction: ${predicted_class}\n` +
-          `Confidence: ${confidence_percent}%\n\n` +
-          `${interpretation ? interpretation.split(". ")[0] + ".\n\n" : ""}` + // show only first sentence
+          `Prediction: ${data.predicted_class}\n` +
+          `Confidence: ${data.confidence}%\n\n` +
           probText
         );
+      } else if (data.predicted_class) {
+        setResult(`Prediction: ${data.predicted_class} (Confidence: ${data.confidence}%)`);
       } else {
-        setResult("Error: No prediction returned.")
+        setResult("Error: No prediction returned.");
       }
     } catch (error: unknown) {
       setResult("Error: " + (error instanceof Error ? error.message : String(error)));
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
   }
 
   const handleFollowup = async () => {
     setFollowupResponse("");
-    if (!predictedClass || !confidencePercent) {
+    if (!result) {
       setFollowupResponse("Run prediction first.");
       return;
     }
-    const payload = { data: [predictedClass, confidencePercent, followupQuestion] };
+    const payload = {
+      previous_context: result,
+      question: followupQuestion
+    };
     try {
-      const response = await fetch("https://veranziverah.app.modelbit.com/v1/interpret_and_follow_up/latest", {
+      const response = await fetch("https://afyasasa-llm.onrender.com/follow-up", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
       });
-      const result = await response.json();
-      setFollowupResponse(result.data?.data?.followup || "No answer returned.");
-      // Notify user after follow-up
-      if (patientId) {
-        await fetch("/api/notify_user", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            user_id: patientId,
-            message: "Your clinician has reviewed your case and added a follow-up."
-          })
-        });
-        toast.success("User notified of follow-up.");
-      }
+      const data = await response.json();
+      setFollowupResponse(data.response || "No answer returned.");
     } catch (error) {
       setFollowupResponse("Error: " + (error instanceof Error ? error.message : String(error)));
     }
@@ -201,14 +193,14 @@ export function PredictionDemo() {
     setUserInput("");
     setIsLoadingChat(true);
     try {
-      const res = await fetch("https://veranziverah.app.modelbit.com/v1/ovarian_cyst_knowledge_assistant/latest", {
+      const res = await fetch("https://afyasasa-llm.onrender.com/ask", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ data: currentInput }),
+        body: JSON.stringify({ query: currentInput }),
       });
       const data = await res.json();
       if (res.ok) {
-        const responseText = data.data?.answer?.replaceAll("\n", "\n") || "No answer found.";
+        const responseText = data.answer?.replaceAll("\n", "\n") || "No answer found.";
         setMessages(prev => [...prev, { role: "assistant", content: responseText }]);
       } else {
         setMessages(prev => [...prev, { role: "assistant", content: "I apologize, but I encountered an error. Please try again." }]);
@@ -219,6 +211,34 @@ export function PredictionDemo() {
       setIsLoadingChat(false);
     }
   }
+
+  // Add this function to save print/report record
+  const handlePrintAndSave = async () => {
+    const printContents = document.getElementById('print-section')?.innerHTML;
+    const originalContents = document.body.innerHTML;
+    // Save to Firestore
+    if (user && patientId) {
+      try {
+        await addDoc(collection(db, "prints"), {
+          clinicianId: user.uid,
+          patientId: patientId,
+          timestamp: new Date().toISOString(),
+          reportType: "Ovarian Cyst Management",
+          summary: interpretation || result || "",
+          printedBy: user.email || "clinician"
+        });
+      } catch (e) {
+        console.error("Error saving print record:", e);
+      }
+    }
+    // Print logic
+    if (printContents) {
+      document.body.innerHTML = printContents;
+      window.print();
+      document.body.innerHTML = originalContents;
+      window.location.reload();
+    }
+  };
 
   return (
     <section className="py-10 min-h-screen bg-gradient-to-br from-[#f5f7fa] to-[#ffe4ef] font-sans">
@@ -292,12 +312,12 @@ export function PredictionDemo() {
                           <Input
                             id="age"
                             type="number"
-                            min={18}
+                            min={12}
                             max={90}
-                            placeholder="18–90"
+                            placeholder="12–90"
                             className="form-control mt-1 rounded-lg border border-pink-200 focus:border-pink-400 focus:ring-2 focus:ring-pink-100 shadow-sm w-full text-base md:text-lg"
-                            value={age}
-                            onChange={e => setAge(Number(e.target.value))}
+                            value={age === 0 ? "" : age}
+                            onChange={e => setAge(e.target.value === "" ? 0 : Number(e.target.value))}
                             required
                           />
                         </div>
@@ -331,8 +351,8 @@ export function PredictionDemo() {
                             max={20}
                             placeholder="0.1–20"
                             className="form-control mt-1 rounded-lg border border-pink-200 focus:border-pink-400 focus:ring-2 focus:ring-pink-100 shadow-sm w-full text-base md:text-lg"
-                            value={size}
-                            onChange={e => setSize(Number(e.target.value))}
+                            value={size === 0 ? "" : size}
+                            onChange={e => setSize(e.target.value === "" ? 0 : Number(e.target.value))}
                             required
                           />
                         </div>
@@ -348,8 +368,8 @@ export function PredictionDemo() {
                             max={10}
                             placeholder="-5 to 10"
                             className="form-control mt-1 rounded-lg border border-pink-200 focus:border-pink-400 focus:ring-2 focus:ring-pink-100 shadow-sm w-full text-base md:text-lg"
-                            value={growth}
-                            onChange={e => setGrowth(Number(e.target.value))}
+                            value={growth === 0 ? "" : growth}
+                            onChange={e => setGrowth(e.target.value === "" ? 0 : Number(e.target.value))}
                             required
                           />
                         </div>
@@ -364,8 +384,8 @@ export function PredictionDemo() {
                         max={2000}
                         placeholder="0–2000"
                         className="form-control mt-1 rounded-lg border border-pink-200 focus:border-pink-400 focus:ring-2 focus:ring-pink-100 shadow-sm w-full text-base md:text-lg"
-                        value={ca125}
-                        onChange={e => setCa125(Number(e.target.value))}
+                        value={ca125 === 0 ? "" : ca125}
+                        onChange={e => setCa125(e.target.value === "" ? 0 : Number(e.target.value))}
                         required
                       />
                     </div>
@@ -396,6 +416,15 @@ export function PredictionDemo() {
                           <span className="ml-2">{symptom}</span>
                         </label>
                       ))}
+                      <label className="inline-flex items-center mr-4">
+                        <input
+                          type="checkbox"
+                          className="form-checkbox"
+                          checked={othersSymptom}
+                          onChange={() => setOthersSymptom(v => !v)}
+                        />
+                        <span className="ml-2">Others</span>
+                      </label>
                     </div>
                     <Button
                       type="submit"
@@ -409,7 +438,7 @@ export function PredictionDemo() {
                     <div className="result-container mt-8 p-6 rounded-lg bg-pink-50 border-l-4 border-pink-400 w-full">
                       <h3 className="result-title text-lg font-bold flex items-center gap-2 text-pink-700 mb-2">Prediction Result</h3>
                       <pre className="result-content text-pink-700 text-xl font-semibold whitespace-pre-wrap">{result}</pre>
-                      {(interpretation || llmReport) && (
+                      {interpretation && (
                         <button className="mt-4 underline text-pink-700 hover:text-pink-900" onClick={() => setActiveTab('explanation')}>
                           See Explanation
                         </button>
@@ -426,16 +455,7 @@ export function PredictionDemo() {
                   </div>
                   <button
                     className="mb-4 ml-auto block bg-gradient-to-r from-pink-600 to-rose-600 hover:from-pink-700 hover:to-rose-700 text-white font-bold py-2 px-6 rounded-lg shadow-lg print:hidden"
-                    onClick={() => {
-                      const printContents = document.getElementById('print-section')?.innerHTML;
-                      const originalContents = document.body.innerHTML;
-                      if (printContents) {
-                        document.body.innerHTML = printContents;
-                        window.print();
-                        document.body.innerHTML = originalContents;
-                        window.location.reload();
-                      }
-                    }}
+                    onClick={handlePrintAndSave}
                   >
                     Print
                   </button>
@@ -485,7 +505,7 @@ export function PredictionDemo() {
                   <div className="chat-messages h-80 md:h-96 p-2 sm:p-4 overflow-y-auto bg-[#fff0f6] w-full">
                     {messages.map((message, idx) => (
                       <div key={idx} className={`message mb-4 p-4 rounded-lg max-w-[80%] ${message.role === 'user' ? 'bg-gradient-to-r from-pink-600 to-rose-600 text-white ml-auto rounded-br-none' : 'bg-white text-pink-900 mr-auto rounded-bl-none border border-pink-100'}`}>
-                        {message.content}
+                        <pre className="whitespace-pre-wrap inline">{message.content}</pre>
                       </div>
                     ))}
                     {isLoadingChat && (

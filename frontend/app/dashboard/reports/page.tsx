@@ -1,224 +1,320 @@
 "use client";
-import { useState } from "react";
-import { useGoogleSheet } from "@/hooks/useGoogleSheet";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import RoleGuard from "@/components/RoleGuard";
+import { useEffect, useState } from "react";
+import { db } from "@/lib/firebase";
+import { collection, getDocs, deleteDoc, doc, addDoc, query, where, orderBy, limit } from "firebase/firestore";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Calendar } from "@/components/ui/calendar";
-import {
-  Download,
-  FileText,
-  Calendar as CalendarIcon,
-  Search,
-  Filter,
-  BarChart3,
-  PieChart,
-  LineChart,
-} from "lucide-react";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { format } from "date-fns";
+import { useRouter } from "next/navigation";
+import { auth } from "@/lib/firebase";
+import { useUserRole } from "@/hooks/useUserRole";
+import { useUserContext } from "@/context/UserContext";
 
-const OVARIAN_DATA_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSOrLbxUb6jmar3LIp2tFGHHimYL7Tl6zZTRNqJohoWBaq7sk0UHkxTKPwknP3muI5rx2kE6PwSyrKk/pub?gid=0&single=true&output=csv";
-const INVENTORY_DATA_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSOrLbxUb6jmar3LIp2tFGHHimYL7Tl6zZTRNqJohoWBaq7sk0UHkxTKPwknP3muI5rx2kE6PwSyrKk/pub?gid=1858485866&single=true&output=csv";
-const TREATMENT_DATA_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSOrLbxUb6jmar3LIp2tFGHHimYL7Tl6zZTRNqJohoWBaq7sk0UHkxTKPwknP3muI5rx2kE6PwSyrKk/pub?gid=1665109618&single=true&output=csv";
+export function CreateReportForm({ onReportCreated, filterPrintsByPrintedBy }: { onReportCreated: () => void, filterPrintsByPrintedBy?: string }) {
+  const { user, role } = useUserContext();
+  const [patients, setPatients] = useState<any[]>([]); // Will hold { patientId, patientName, printedBy, timestamp }
+  const [clinicians, setClinicians] = useState<any[]>([]);
+  const [form, setForm] = useState({
+    patientId: "",
+    clinicianId: "",
+    type: "",
+    fileUrl: "",
+    status: "",
+    date: "",
+  });
+  const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState("");
+  const [error, setError] = useState("");
 
-export default function ReportsPage() {
-  const { data: patients } = useGoogleSheet(OVARIAN_DATA_CSV);
-  const { data: inventory } = useGoogleSheet(INVENTORY_DATA_CSV);
-  const { data: treatments } = useGoogleSheet(TREATMENT_DATA_CSV);
-  const [search, setSearch] = useState("");
+  useEffect(() => {
+    async function fetchPatientsFromPrints() {
+      const printsSnap = await getDocs(collection(db, "prints"));
+      const patientMap = {};
+      printsSnap.forEach(doc => {
+        const data = doc.data();
+        if (data.patientId && data.printedBy) {
+          if (role === "clinician" && filterPrintsByPrintedBy) {
+            console.log("Comparing printedBy:", data.printedBy, "with user.email:", filterPrintsByPrintedBy);
+            if (data.printedBy !== filterPrintsByPrintedBy) return;
+          }
+          const key = data.patientId;
+          if (!patientMap[key] || (data.timestamp && (!patientMap[key].timestamp || new Date(data.timestamp) > new Date(patientMap[key].timestamp)))) {
+            patientMap[key] = {
+              patientId: data.patientId,
+              patientName: data.patientName || data.patientId,
+              printedBy: data.printedBy || "",
+              timestamp: data.timestamp,
+            };
+          }
+        }
+      });
+      const patientArr = Object.values(patientMap);
+      setPatients(patientArr);
+      console.log("Loaded patients for dropdown (role:", role, "):", patientArr);
+    }
+    fetchPatientsFromPrints();
+    // ...fetch clinicians as before...
+    async function fetchClinicians() {
+      const usersSnapshot = await getDocs(collection(db, "users"));
+      const users = usersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setClinicians(users.filter(u => u.role === "clinician"));
+    }
+    fetchClinicians();
+  }, [role, filterPrintsByPrintedBy]);
 
-  // Metrics from real data
-  const totalReports = (treatments?.length || 0) + (inventory?.length || 0) + (patients?.length || 0);
-  // Map real categories to Analytics/Statistics
-  const analyticsCategories = ["Lab Test", "Imaging"];
-  const statisticsCategories = ["Consultation", "Surgery"];
-  const analyticsReports = (treatments || []).filter(t => analyticsCategories.includes(t["Category"])).length;
-  const statisticsReports = (treatments || []).filter(t => statisticsCategories.includes(t["Category"])).length;
-  const inventoryReports = inventory?.length || 0;
+  // Helper to get latest print for this patient/clinician
+  async function getLatestPrintForPatientAndClinician(patientId, clinicianId) {
+    const q = query(
+      collection(db, "prints"),
+      where("patientId", "==", patientId),
+      where("clinicianId", "==", clinicianId),
+      orderBy("timestamp", "desc"),
+      limit(1)
+    );
+    const snapshot = await getDocs(q);
+    if (!snapshot.empty) {
+      return snapshot.docs[0].data();
+    }
+    return null;
+  }
 
-  // Build a real reports list (latest treatments, inventory, patients)
-  const realReports = [
-    ...(treatments || []).slice(0, 5).map((t, i) => ({
-      id: `TREAT-${i+1}`,
-      title: t["Service"] || t["Category"] || t["Treatment"] || "Treatment Report",
-      type: t["Category"] || "Treatment",
-      date: t["Date"] || "-",
-      status: "Generated",
-      format: "CSV",
-      size: t["Base Cost (KES)"] ? `${Number(t["Base Cost (KES)"]).toLocaleString()} KES` : "-",
-      icon: BarChart3,
-      _rawRow: t,
-    })),
-    ...(inventory || []).slice(0, 3).map((inv, i) => ({
-      id: `INV-${i+1}`,
-      title: inv["Item"] || "Inventory Report",
-      type: inv["Category"] || "Inventory",
-      date: inv["Last Restock"] || "-",
-      status: "Generated",
-      format: "CSV",
-      size: inv["Available Stock"] ? `${inv["Available Stock"]} units` : "-",
-      icon: FileText,
-      _rawRow: inv,
-    })),
-    ...(patients || []).slice(0, 2).map((p, i) => ({
-      id: `PAT-${i+1}`,
-      title: p["Patient ID"] || "Patient Report",
-      type: "Patient",
-      date: p["Date"] || "-",
-      status: "Generated",
-      format: "CSV",
-      size: p["Age"] ? `${p["Age"]} yrs` : "-",
-      icon: PieChart,
-      _rawRow: p,
-    })),
-  ];
+  const handleChange = (e: any) => {
+    setForm({ ...form, [e.target.name]: e.target.value });
+  };
 
-  // Search filter
-  const filteredReports = realReports.filter(r =>
-    r.title.toLowerCase().includes(search.toLowerCase()) ||
-    r.type.toLowerCase().includes(search.toLowerCase())
-  );
+  const handleSubmit = async (e: any) => {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+    setSuccess("");
+    try {
+      const patient = patients.find(p => p.patientId === form.patientId);
+      let clinicianIdToUse = form.clinicianId;
+      let clinicianNameToUse = clinicians.find(c => c.uid === form.clinicianId)?.name;
+      if (role === "clinician") {
+        clinicianIdToUse = user?.uid;
+        clinicianNameToUse = user?.name;
+      }
+      // Fallback for clinicianName
+      if (!clinicianNameToUse) {
+        clinicianNameToUse = clinicianIdToUse || "";
+      }
+      // Validation
+      if (!form.patientId || !clinicianIdToUse) {
+        setError("Please select a patient and clinician.");
+        setLoading(false);
+        return;
+      }
+      // Query latest print for this patient/clinician
+      const latestPrint = await getLatestPrintForPatientAndClinician(form.patientId, clinicianIdToUse);
+      // Log the data to be sent
+      console.log('Creating report with:', {
+        patientId: form.patientId,
+        patientName: latestPrint?.patientName || patient?.patientName,
+        clinicianId: clinicianIdToUse,
+        clinicianName: clinicianNameToUse,
+        type: form.type,
+        fileUrl: form.fileUrl,
+        status: form.status,
+        date: form.date || new Date().toISOString(),
+      });
+      await addDoc(collection(db, "reports"), {
+        patientId: form.patientId,
+        patientName: latestPrint?.patientName || patient?.patientName,
+        clinicianId: clinicianIdToUse,
+        clinicianName: clinicianNameToUse,
+        type: form.type,
+        fileUrl: form.fileUrl,
+        status: form.status,
+        date: form.date || new Date().toISOString(),
+      });
+      setSuccess("Report created successfully!");
+      setForm({
+        patientId: "",
+        clinicianId: "",
+        type: "",
+        fileUrl: "",
+        status: "",
+        date: "",
+      });
+      if (onReportCreated) onReportCreated();
+    } catch (e) {
+      setError("Failed to create report.");
+      console.error("Error creating report:", e);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
-    <div className="flex-1 space-y-4 p-8 pt-6">
-      <div className="flex items-center justify-between space-y-2">
-        <h2 className="text-3xl font-bold tracking-tight">Reports</h2>
-        <div className="flex items-center space-x-2">
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button variant="outline" className="w-[240px] justify-start text-left font-normal">
-                <CalendarIcon className="mr-2 h-4 w-4" />
-                <span>Pick a date range</span>
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="start">
-              <Calendar
-                mode="range"
-                initialFocus
-              />
-            </PopoverContent>
-          </Popover>
-          <Button className="bg-gradient-to-r from-pink-600 to-rose-600 hover:from-pink-700 hover:to-rose-700">
-            Generate Report
-          </Button>
+    <div className="max-w-xl mx-auto p-6 bg-white rounded shadow mb-8">
+      <h2 className="text-2xl font-bold mb-4">Create Report</h2>
+      {error && <div className="text-red-600 mb-2">{error}</div>}
+      {success && <div className="text-green-600 mb-2">{success}</div>}
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div>
+          <label className="block mb-1 font-semibold">Patient</label>
+          <select
+            name="patientId"
+            value={form.patientId}
+            onChange={handleChange}
+            className="border rounded px-3 py-2 w-full"
+            required
+          >
+            <option value="">Select patient</option>
+            {role === "admin"
+              ? Array.from(new Set(patients.map(p => p.patientId))).map(pid => (
+                  <option key={pid} value={pid}>{pid}</option>
+                ))
+              : patients.map(p => (
+                  <option key={p.patientId} value={p.patientId}>{p.patientId}</option>
+                ))}
+          </select>
         </div>
-      </div>
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Reports</CardTitle>
-            <FileText className="h-4 w-4 text-blue-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{totalReports}</div>
-            <p className="text-xs text-muted-foreground">
-              <span className="text-green-600">Live</span>
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Analytics Reports</CardTitle>
-            <BarChart3 className="h-4 w-4 text-purple-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{analyticsReports}</div>
-            <p className="text-xs text-muted-foreground">
-              <span className="text-green-600">Live</span>
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Statistics Reports</CardTitle>
-            <PieChart className="h-4 w-4 text-green-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{statisticsReports}</div>
-            <p className="text-xs text-muted-foreground">
-              <span className="text-green-600">Live</span>
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Inventory Reports</CardTitle>
-            <FileText className="h-4 w-4 text-orange-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{inventoryReports}</div>
-            <p className="text-xs text-muted-foreground">
-              <span className="text-green-600">Live</span>
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-      <div className="flex items-center space-x-2">
-        <div className="relative flex-1">
+        {role === "admin" && (
+          <div>
+            <label className="block mb-1 font-semibold">Clinician</label>
+            <select
+              name="clinicianId"
+              value={form.clinicianId}
+              onChange={handleChange}
+              className="border rounded px-3 py-2 w-full"
+              required
+            >
+              <option value="">Select clinician</option>
+              {Array.from(new Set(patients
+                .filter(p => !form.patientId || p.patientId === form.patientId)
+                .map(p => p.printedBy)))
+                .filter(email => !!email)
+                .map(email => (
+                  <option key={email} value={email}>{email}</option>
+                ))}
+            </select>
+          </div>
+        )}
+        {role === "clinician" && (
+          <div className="mb-2"><b>Clinician:</b> {user?.email}</div>
+        )}
+        <div>
+          <label className="block mb-1 font-semibold">Type</label>
           <input
-            placeholder="Search reports..."
-            className="pl-8 w-full p-2 border rounded-md"
-            value={search}
-            onChange={e => setSearch(e.target.value)}
+            name="type"
+            value={form.type}
+            onChange={handleChange}
+            className="border rounded px-3 py-2 w-full"
+            placeholder="e.g. Lab Result"
+            required
           />
         </div>
-        <Button variant="outline">
-          <Filter className="mr-2 h-4 w-4" /> Filter
+        <div>
+          <label className="block mb-1 font-semibold">File URL</label>
+          <input
+            name="fileUrl"
+            value={form.fileUrl}
+            onChange={handleChange}
+            className="border rounded px-3 py-2 w-full"
+            placeholder="https://..."
+          />
+        </div>
+        <div>
+          <label className="block mb-1 font-semibold">Status</label>
+          <input
+            name="status"
+            value={form.status}
+            onChange={handleChange}
+            className="border rounded px-3 py-2 w-full"
+            placeholder="e.g. Reviewed"
+            required
+          />
+        </div>
+        <div>
+          <label className="block mb-1 font-semibold">Date</label>
+          <input
+            name="date"
+            type="datetime-local"
+            value={form.date}
+            onChange={handleChange}
+            className="border rounded px-3 py-2 w-full"
+          />
+        </div>
+        <Button type="submit" disabled={loading}>
+          {loading ? "Creating..." : "Create Report"}
         </Button>
-      </div>
-      <Card>
-        <CardHeader>
-          <CardTitle>Recent Reports</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {filteredReports.length > 0 ? filteredReports.map((report) => (
-              <div key={report.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 bg-gradient-to-br from-pink-500 to-rose-500 rounded-full flex items-center justify-center text-white">
-                    <report.icon className="h-5 w-5" />
-                  </div>
-                  <div>
-                    <div className="font-medium text-gray-900">{report.title}</div>
-                    <div className="text-sm text-gray-600">ID: {report.id} • {report.type}</div>
-                    <div className="text-sm text-gray-600">Format: {report.format} • Size: {report.size}</div>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <Badge variant="secondary" className="mb-1">
-                    {report.status}
-                  </Badge>
-                  <div className="text-xs text-gray-500">Generated: {report.date}</div>
-                  <Button variant="ghost" size="sm" className="mt-2" onClick={() => {
-                    // Download the report as CSV
-                    const row = report._rawRow;
-                    if (row) {
-                      const csv = Object.keys(row).join(",") + "\n" + Object.values(row).join(",");
-                      const blob = new Blob([csv], { type: "text/csv" });
-                      const url = URL.createObjectURL(blob);
-                      const a = document.createElement("a");
-                      a.href = url;
-                      a.download = `${report.title.replace(/\s+/g, "-").toLowerCase()}-${report.id}.csv`;
-                      a.click();
-                      URL.revokeObjectURL(url);
-                    }
-                  }}>
-                    <Download className="h-4 w-4 mr-2" /> Download
-                  </Button>
-                </div>
-              </div>
-            )) : (
-              <div className="text-center text-gray-500 py-4">No reports found.</div>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+      </form>
     </div>
+  );
+}
+
+export default function AdminReportsPage() {
+  const [reports, setReports] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [user, setUser] = useState<any>(null);
+  const { role, loading: roleLoading } = useUserRole(user);
+  const router = useRouter();
+
+  useEffect(() => {
+    const unsubscribe = auth.onAuthStateChanged(setUser);
+    return () => unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    if (!roleLoading && role === "clinician") {
+      router.replace("/dashboard/reports/clinician-page");
+    }
+  }, [role, roleLoading, router]);
+
+  async function fetchReports() {
+    setLoading(true);
+    try {
+      const querySnapshot = await getDocs(collection(db, "reports"));
+      setReports(querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+    } catch (e) {
+      setError("Failed to load reports.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleDeleteReport(reportId: string) {
+    try {
+      await deleteDoc(doc(db, "reports", reportId));
+      fetchReports();
+    } catch (e) {
+      setError("Failed to delete report.");
+      console.error("Error deleting report:", e);
+    }
+  }
+
+  useEffect(() => {
+    fetchReports();
+  }, []);
+
+  return (
+    <RoleGuard allowed={["admin"]}>
+      <div className="max-w-5xl mx-auto p-8">
+        <h2 className="text-3xl font-bold mb-6">Manage Reports</h2>
+        <CreateReportForm onReportCreated={fetchReports} />
+        {error && <div className="text-red-600 mb-4">{error}</div>}
+        {loading ? (
+          <div>Loading...</div>
+        ) : reports.length === 0 ? (
+          <div className="text-gray-500">No reports found.</div>
+        ) : (
+          <ul className="space-y-4">
+            {reports.map((rep) => (
+              <li key={rep.id} className="border rounded-lg p-4 bg-white flex flex-col gap-2">
+                <div><b>Patient:</b> {rep.patientName}</div>
+                <div><b>Clinician:</b> {rep.clinicianName}</div>
+                <div><b>Type:</b> {rep.type}</div>
+                <div><b>Status:</b> {rep.status}</div>
+                <div><b>Date:</b> {rep.date ? new Date(rep.date).toLocaleString() : "-"}</div>
+                <a href={rep.fileUrl} className="text-blue-600 underline">Download</a>
+                <button onClick={() => handleDeleteReport(rep.id)} className="text-red-600 mt-2">Delete</button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    </RoleGuard>
   );
 } 

@@ -67,14 +67,20 @@ export function Dashboard({ initialTab = 'dashboard' }: DashboardProps) {
   }
 
   // Map ovarian_data to patients for display
-  const patients = (ovarianSheet || []).filter(p => p["Patient ID"]).map((p: PatientData) => ({
-    name: p["Patient ID"] || "Unknown",
-    age: p["Age"] || "-",
-    risk: p["Risk Level"] === "Observation"
-      ? "Moderate"
-      : p["Risk Level"] || "Unknown",
-    date: p["Date"] ? new Date(p["Date"]).toLocaleDateString() : "-",
-  }));
+  const patients = (ovarianSheet || []).filter(p => p["Patient ID"]).map((p: PatientData) => {
+    let risk = "Unknown";
+    const mgmt = (p["Recommended Management"] || "").trim();
+    if (mgmt === "Referral") risk = "High";
+    else if (mgmt === "Surgery") risk = "Medium";
+    else if (mgmt === "Medication") risk = "Low";
+    else if (mgmt === "Observation") risk = "Moderate";
+    return {
+      name: p["Patient ID"] || "Unknown",
+      age: p["Age"] || "-",
+      risk,
+      date: p["Date"] ? new Date(p["Date"]).toLocaleDateString() : "-",
+    };
+  });
 
   // Map inventory_data for display
   const inventoryItems = (inventorySheet || []).filter(i => i["Item"]).map((i: InventoryData, idx: number): InventoryItem => ({
@@ -140,6 +146,27 @@ export function Dashboard({ initialTab = 'dashboard' }: DashboardProps) {
     return matchesFacility && matchesCategory && matchesNHIF;
   });
 
+  // Calculate cost savings (example: 5000 Ksh per patient)
+  const costSavings = patients.length * 5000;
+
+  // Remove avgTreatmentCost calculation and card
+
+  // Find the most common ultrasound feature
+  let mostCommonFeature = "-";
+  let mostCommonFeatureCount = 0;
+  if (ovarianSheet && ovarianSheet.length > 0) {
+    const featureCounts: Record<string, number> = {};
+    ovarianSheet.forEach(p => {
+      const feature = (p["Ultrasound Features"] || "-").trim();
+      if (feature) featureCounts[feature] = (featureCounts[feature] || 0) + 1;
+    });
+    const sorted = Object.entries(featureCounts).sort((a, b) => b[1] - a[1]);
+    if (sorted.length > 0) {
+      mostCommonFeature = sorted[0][0];
+      mostCommonFeatureCount = sorted[0][1];
+    }
+  }
+
   return (
     <section className="py-20 bg-gray-50">
       <div className="container mx-auto px-4">
@@ -147,75 +174,79 @@ export function Dashboard({ initialTab = 'dashboard' }: DashboardProps) {
           <>
             <div className="mb-8 text-center">
               <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-1">Dashboard</h1>
-              <p className="text-gray-500 text-base md:text-lg">Overview of ovarian cyst prediction and care metrics</p>
+              <p className="text-gray-500 text-base md:text-lg">Overview of ovarian cyst care metrics</p>
             </div>
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+            <div className="flex flex-row flex-nowrap justify-evenly gap-6 mb-8 w-full">
               {/* Key Metrics */}
               <div className="lg:col-span-3">
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-                  <Card className="shadow-lg">
-                    <CardContent className="p-6">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-sm font-medium text-gray-600">Active Patients</p>
-                          <p className="text-3xl font-bold text-gray-900">{patients.length}</p>
+                <div className="flex flex-row flex-nowrap justify-between gap-6 mb-8 w-full">
+                  <div className="flex-1 flex justify-center min-w-0" style={{ flexBasis: '40%' }}>
+                    <Card className="shadow-lg w-full max-w-none">
+                      <CardContent className="p-6">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-sm font-medium text-gray-600">Active Patients</p>
+                            <p className="text-3xl font-bold text-gray-900">{patients.length}</p>
+                          </div>
+                          <Users className="h-8 w-8 text-blue-600" />
                         </div>
-                        <Users className="h-8 w-8 text-blue-600" />
-                      </div>
-                      <div className="mt-4 flex items-center text-sm">
-                        <TrendingUp className="h-4 w-4 text-green-600 mr-1" />
-                        <span className="text-green-600">Live data</span>
-                      </div>
-                    </CardContent>
-                  </Card>
+                        <div className="mt-4 flex items-center text-sm">
+                          <TrendingUp className="h-4 w-4 text-green-600 mr-1" />
+                          <span className="text-green-600">Live data</span>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
 
-                  <Card className="shadow-lg">
-                    <CardContent className="p-6">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-sm font-medium text-gray-600">High Risk Cases</p>
-                          <p className="text-3xl font-bold text-gray-900">{patients.filter(p => p.risk === "High").length}</p>
+                  <div className="flex-1 flex justify-center min-w-0" style={{ flexBasis: '40%' }}>
+                    <Card className="shadow-lg w-full max-w-none">
+                      <CardContent className="p-6">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-sm font-medium text-gray-600">High Risk Cases</p>
+                            <p className="text-3xl font-bold text-gray-900">{patients.filter(p => p.risk === "High").length}</p>
+                          </div>
+                          <AlertTriangle className="h-8 w-8 text-red-600" />
                         </div>
-                        <AlertTriangle className="h-8 w-8 text-red-600" />
-                      </div>
-                      <div className="mt-4 flex items-center text-sm">
-                        <Clock className="h-4 w-4 text-yellow-600 mr-1" />
-                        <span className="text-yellow-600">{patients.filter(p => p.risk === "High").length} need immediate attention</span>
-                      </div>
-                    </CardContent>
-                  </Card>
+                        <div className="mt-4 flex items-center text-sm">
+                          <Clock className="h-4 w-4 text-yellow-600 mr-1" />
+                          <span className="text-yellow-600">{patients.filter(p => p.risk === "High").length} need immediate attention</span>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
 
-                  <Card className="shadow-lg">
-                    <CardContent className="p-6">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-sm font-medium text-gray-600">Prediction Accuracy</p>
-                          <p className="text-3xl font-bold text-gray-900">94.2%</p>
+                  <div className="flex-1 flex justify-center min-w-0" style={{ flexBasis: '40%' }}>
+                    <Card className="shadow-lg w-full max-w-none">
+                      <CardContent className="p-6">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-sm font-medium text-gray-600">Cost Savings</p>
+                            <p className="text-3xl font-bold text-gray-900">Ksh {costSavings.toLocaleString()}</p>
+                          </div>
+                          <DollarSign className="h-8 w-8 text-purple-600" />
                         </div>
-                        <Activity className="h-8 w-8 text-green-600" />
-                      </div>
-                      <div className="mt-4 flex items-center text-sm">
-                        <CheckCircle className="h-4 w-4 text-green-600 mr-1" />
-                        <span className="text-green-600">Above target (90%)</span>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  <Card className="shadow-lg">
-                    <CardContent className="p-6">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-sm font-medium text-gray-600">Cost Savings</p>
-                          <p className="text-3xl font-bold text-gray-900">$24.5K</p>
+                        <div className="mt-4 flex items-center text-sm">
+                          <TrendingUp className="h-4 w-4 text-green-600 mr-1" />
+                          <span className="text-green-600">Estimated</span>
                         </div>
-                        <DollarSign className="h-8 w-8 text-purple-600" />
-                      </div>
-                      <div className="mt-4 flex items-center text-sm">
-                        <TrendingUp className="h-4 w-4 text-green-600 mr-1" />
-                        <span className="text-green-600">This quarter</span>
-                      </div>
-                    </CardContent>
-                  </Card>
+                      </CardContent>
+                    </Card>
+                  </div>
+                  <div className="flex-1 flex justify-center min-w-0" style={{ flexBasis: '40%' }}>
+                    <Card className="shadow-lg w-full max-w-none">
+                      <CardContent className="p-6">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-sm font-medium text-gray-600">Most Common Feature</p>
+                            <p className="text-lg font-bold text-gray-900">{mostCommonFeature}</p>
+                            <p className="text-xs text-muted-foreground">{mostCommonFeatureCount} patient(s)</p>
+                          </div>
+                          <Badge className="bg-blue-100 text-blue-800"><span role="img" aria-label="ultrasound">🔬</span></Badge>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
                 </div>
               </div>
             </div>

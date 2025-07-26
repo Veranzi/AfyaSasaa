@@ -1,8 +1,9 @@
 export default function Head() {
   return (
     <>
-      <link rel="icon" href="/faviconAfyasasa.png" type="image/png" sizes="32x32" />
-      <link rel="icon" href="/logo-afyasasa.svg" type="image/svg+xml" />
+      <title>AfyaSasa</title>
+      <meta name="viewport" content="width=device-width, initial-scale=1" />
+      <link rel="icon" href="/favicon.ico" />
     </>
   );
-} 
+}

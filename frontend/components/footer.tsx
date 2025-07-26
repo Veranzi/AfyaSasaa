@@ -136,8 +136,8 @@ export function Footer() {
                   <Mail className="h-4 w-4 text-pink-400" />
                   <div>
                     <p className="text-xs text-gray-400 uppercase tracking-wide">Email</p>
-                    <a href="mailto:info@afyasasa.com" className="font-medium">
-                      info@afyasasa.com
+                    <a href="mailto:afyasasa2025@gmail.com" className="font-medium">
+                      afyasasa2025@gmail.com
                     </a>
                   </div>
                 </div>
@@ -189,16 +189,9 @@ export function Footer() {
                 <a href="https://linkedin.com/company/afyasasa" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn" className="flex items-center justify-center w-12 h-12 bg-gray-800/50 rounded-xl hover:bg-blue-600/30 transition-all duration-300 group">
                   <svg width="24" height="24" fill="currentColor" viewBox="0 0 24 24"><path d="M19 0h-14c-2.76 0-5 2.24-5 5v14c0 2.76 2.24 5 5 5h14c2.76 0 5-2.24 5-5v-14c0-2.76-2.24-5-5-5zm-11 19h-3v-10h3v10zm-1.5-11.27c-.966 0-1.75-.79-1.75-1.76 0-.97.784-1.76 1.75-1.76s1.75.79 1.75 1.76c0 .97-.784 1.76-1.75 1.76zm15.5 11.27h-3v-5.6c0-1.34-.03-3.07-1.87-3.07-1.87 0-2.16 1.46-2.16 2.97v5.7h-3v-10h2.88v1.36h.04c.4-.76 1.38-1.56 2.84-1.56 3.04 0 3.6 2 3.6 4.59v5.61z"/></svg>
                 </a>
-                <a href="https://wa.me/254740875071" className="flex items-center justify-center w-12 h-12 bg-green-600/80 rounded-xl hover:bg-green-700/90 transition-all duration-300 group ml-2">
+                {/* WhatsApp icon moved to the end */}
+                <a href="https://wa.me/254740875071" target="_blank" rel="noopener noreferrer" aria-label="WhatsApp" className="flex items-center justify-center w-12 h-12 bg-green-600/80 rounded-xl hover:bg-green-700/90 transition-all duration-300 group ml-2">
                   <svg width="28" height="28" viewBox="0 0 32 32" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M16 3C9.373 3 4 8.373 4 15c0 2.385.832 4.584 2.236 6.393L4 29l7.828-2.205C13.416 27.168 15.615 28 18 28c6.627 0 12-5.373 12-12S22.627 3 16 3zm0 22c-2.021 0-3.938-.586-5.563-1.684l-.397-.263-4.656 1.312 1.25-4.531-.26-.404C5.586 18.938 5 17.021 5 15c0-6.065 4.935-11 11-11s11 4.935 11 11-4.935 11-11 11zm6.188-7.406c-.338-.169-2.006-.992-2.316-1.104-.31-.113-.537-.169-.763.17-.225.338-.87 1.104-1.067 1.33-.197.225-.394.254-.732.085-.338-.17-1.428-.526-2.72-1.678-1.006-.898-1.684-2.008-1.882-2.346-.197-.338-.021-.52.148-.688.152-.151.338-.394.507-.592.169-.197.225-.338.338-.563.113-.225.056-.423-.028-.592-.084-.169-.763-1.84-1.045-2.522-.276-.664-.557-.573-.763-.584-.197-.008-.423-.01-.648-.01-.225 0-.592.084-.902.394-.31.31-1.18 1.152-1.18 2.807 0 1.655 1.205 3.252 1.374 3.477.169.225 2.376 3.627 5.76 4.945.806.277 1.434.442 1.924.566.808.205 1.545.176 2.127.107.649-.077 2.006-.82 2.29-1.613.282-.793.282-1.473.197-1.613-.084-.141-.31-.225-.648-.394z" fill="#fff"/></svg>
-                </a>
-                <a href="https://ayfasasa.blogspot.com/2025/07/ovarian-cysts-in-pregnancy.html" className="flex items-center justify-center w-12 h-12 bg-gray-800/50 rounded-xl hover:bg-yellow-500/30 transition-all duration-300 group" title="Ovarian Cysts in Pregnancy Blog">
-                  {/* Book Icon */}
-                  <svg width="24" height="24" fill="currentColor" viewBox="0 0 24 24"><path d="M19 2H8a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h11a1 1 0 0 0 1-1V3a1 1 0 0 0-1-1zm-1 16H9V4h9zm-9 2V4a1 1 0 0 1 1-1h1v16H8a1 1 0 0 1-1-1zm12 1a1 1 0 0 1-1 1H8a3 3 0 0 1-3-3V4a3 3 0 0 1 3-3h11a3 3 0 0 1 3 3v16a3 3 0 0 1-3 3z"/></svg>
-                </a>
-                <a href="https://ayfasasa.blogspot.com/2025/07/symptoms-and-medications.html" className="flex items-center justify-center w-12 h-12 bg-gray-800/50 rounded-xl hover:bg-yellow-400/30 transition-all duration-300 group" title="Ovarian Cysts: Symptoms and Medications Blog">
-                  {/* Book Icon */}
-                  <svg width="24" height="24" fill="currentColor" viewBox="0 0 24 24"><path d="M19 2H8a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h11a1 1 0 0 0 1-1V3a1 1 0 0 0-1-1zm-1 16H9V4h9zm-9 2V4a1 1 0 0 1 1-1h1v16H8a1 1 0 0 1-1-1zm12 1a1 1 0 0 1-1 1H8a3 3 0 0 1-3-3V4a3 3 0 0 1 3-3h11a3 3 0 0 1 3 3v16a3 3 0 0 1-3 3z"/></svg>
                 </a>
               </div>
             </div>

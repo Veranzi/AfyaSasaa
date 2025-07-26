@@ -1,0 +1,29 @@
+{
+  "locations": [
+    { "id": "loc-1", "name": "Nairobi" },
+    { "id": "loc-2", "name": "Mombasa" }
+  ],
+  "clinics": [
+    { "id": "clinic-1", "name": "Nairobi Women's Hospital", "locationId": "loc-1" },
+    { "id": "clinic-2", "name": "Aga Khan University Hospital", "locationId": "loc-1" },
+    { "id": "clinic-3", "name": "Mombasa Hospital", "locationId": "loc-2" }
+  ],
+  "doctors": [
+    { "id": "doc-1", "name": "Dr. Achieng Onyango", "clinicId": "clinic-1", "specialization": "Gynecologist" },
+    { "id": "doc-2", "name": "Dr. John OBGYN", "clinicId": "clinic-2", "specialization": "Gynecologist" },
+    { "id": "doc-3", "name": "Dr. Mary Gyenac", "clinicId": "clinic-1", "specialization": "Gynecologist" }
+  ],
+  "slots": [
+    { "doctorId": "doc-1", "date": "2025-07-17", "times": ["8:00 AM", "9:00 AM", "10:00 AM", "11:00 AM", "2:00 PM", "3:00 PM", "4:00 PM"] },
+    { "doctorId": "doc-2", "date": "2025-07-17", "times": ["8:00 AM", "9:00 AM", "10:00 AM", "11:00 AM", "2:00 PM", "3:00 PM", "4:00 PM"] },
+    { "doctorId": "doc-3", "date": "2025-07-17", "times": ["8:00 AM", "9:00 AM", "10:00 AM", "11:00 AM", "2:00 PM", "3:00 PM", "4:00 PM"] }
+  ],
+  "insuranceProviders": [
+    "None",
+    "AAR Insurance",
+    "Jubilee Insurance",
+    "NHIF",
+    "Britam",
+    "Other"
+  ]
+} 

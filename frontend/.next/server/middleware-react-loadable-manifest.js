@@ -1,1 +1,1 @@
-self.__REACT_LOADABLE_MANIFEST="{}"
+self.__REACT_LOADABLE_MANIFEST="{\"app/dashboard/appointments/booking-form.tsx -> @/components/ClinicMapSelector\":{\"id\":\"app/dashboard/appointments/booking-form.tsx -> @/components/ClinicMapSelector\",\"files\":[\"static/chunks/_app-pages-browser_components_ClinicMapSelector_tsx.js\"]},\"components/ClinicMapSelector.tsx -> ./Map\":{\"id\":\"components/ClinicMapSelector.tsx -> ./Map\",\"files\":[\"static/css/_app-pages-browser_components_Map_tsx.css\",\"static/chunks/_app-pages-browser_components_Map_tsx.js\"]}}"

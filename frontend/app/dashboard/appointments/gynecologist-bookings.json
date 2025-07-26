@@ -1,0 +1,32 @@
+[
+  {
+    "id": "book-001",
+    "doctorId": "doc-001",
+    "doctorName": "Dr. Mary Gyenac",
+    "patientId": "pat-001",
+    "patientName": "Jane Doe",
+    "bookingDate": "2024-07-01T10:00:00Z",
+    "serviceType": "Consultation",
+    "status": "confirmed"
+  },
+  {
+    "id": "book-002",
+    "doctorId": "doc-002",
+    "doctorName": "Dr. John OBGYN",
+    "patientId": "pat-002",
+    "patientName": "Alice Smith",
+    "bookingDate": "2024-07-02T14:30:00Z",
+    "serviceType": "Follow-up",
+    "status": "completed"
+  },
+  {
+    "id": "book-003",
+    "doctorId": "doc-001",
+    "doctorName": "Dr. Mary Gyenac",
+    "patientId": "pat-004",
+    "patientName": "Linda Okoth",
+    "bookingDate": "2024-07-04T11:00:00Z",
+    "serviceType": "Surgery",
+    "status": "pending"
+  }
+] 

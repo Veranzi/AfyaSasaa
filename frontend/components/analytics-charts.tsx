@@ -16,7 +16,8 @@ import {
   Bar,
 } from "recharts"
 
-const COLORS = ["#22c55e", "#eab308", "#ef4444"]
+// Brand colors: pink and purple
+const BRAND_COLORS = ["#ec4899", "#a21caf", "#f472b6", "#c084fc"];
 
 interface AnalyticsChartsProps {
   monthlyData: Array<{
@@ -58,14 +59,14 @@ export function AnalyticsCharts({ monthlyData, riskDistribution, ageRiskDistribu
                 <Line
                   type="monotone"
                   dataKey="patients"
-                  stroke="#8884d8"
+                  stroke="#ec4899"
                   strokeWidth={2}
                   name="Actual Patients"
                 />
                 <Line
                   type="monotone"
                   dataKey="predictions"
-                  stroke="#82ca9d"
+                  stroke="#a21caf"
                   strokeWidth={2}
                   name="AI Predictions"
                 />
@@ -96,7 +97,7 @@ export function AnalyticsCharts({ monthlyData, riskDistribution, ageRiskDistribu
                     key={feature}
                     dataKey={feature}
                     stackId="a"
-                    fill={COLORS[idx % COLORS.length]}
+                    fill={BRAND_COLORS[idx % BRAND_COLORS.length]}
                     name={feature}
                   />
                 ))}
@@ -127,7 +128,7 @@ export function AnalyticsCharts({ monthlyData, riskDistribution, ageRiskDistribu
                     key={feature}
                     dataKey={feature}
                     stackId="a"
-                    fill={COLORS[idx % COLORS.length]}
+                    fill={BRAND_COLORS[idx % BRAND_COLORS.length]}
                     name={feature}
                   />
                 ))}
@@ -156,7 +157,7 @@ export function AnalyticsCharts({ monthlyData, riskDistribution, ageRiskDistribu
                   label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
                 >
                   {riskDistribution.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    <Cell key={`cell-${index}`} fill={BRAND_COLORS[index % BRAND_COLORS.length]} />
                   ))}
                 </Pie>
                 <Tooltip />
@@ -178,9 +179,9 @@ export function AnalyticsCharts({ monthlyData, riskDistribution, ageRiskDistribu
                 <XAxis dataKey="ageGroup" />
                 <YAxis allowDecimals={false} />
                 <Tooltip />
-                <Bar dataKey="High" stackId="a" fill="#ef4444" name="High Risk" />
-                <Bar dataKey="Medium" stackId="a" fill="#eab308" name="Medium Risk" />
-                <Bar dataKey="Low" stackId="a" fill="#22c55e" name="Low Risk" />
+                <Bar dataKey="High" stackId="a" fill="#ec4899" name="High Risk" />
+                <Bar dataKey="Medium" stackId="a" fill="#a21caf" name="Medium Risk" />
+                <Bar dataKey="Low" stackId="a" fill="#f472b6" name="Low Risk" />
               </BarChart>
             </ResponsiveContainer>
           </div>

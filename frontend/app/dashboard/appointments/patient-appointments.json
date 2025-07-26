@@ -1,0 +1,35 @@
+[
+  {
+    "id": "apt-001",
+    "patientId": "pat-001",
+    "patientName": "Jane Doe",
+    "appointmentDate": "2024-07-01T10:00:00Z",
+    "doctorId": "doc-001",
+    "doctorName": "Dr. Mary Gyenac",
+    "serviceType": "Consultation",
+    "status": "upcoming",
+    "notes": "First time visit."
+  },
+  {
+    "id": "apt-002",
+    "patientId": "pat-002",
+    "patientName": "Alice Smith",
+    "appointmentDate": "2024-07-02T14:30:00Z",
+    "doctorId": "doc-002",
+    "doctorName": "Dr. John OBGYN",
+    "serviceType": "Follow-up",
+    "status": "completed",
+    "notes": "Follow-up after medication."
+  },
+  {
+    "id": "apt-003",
+    "patientId": "pat-003",
+    "patientName": "Grace Kim",
+    "appointmentDate": "2024-07-03T09:00:00Z",
+    "doctorId": "doc-001",
+    "doctorName": "Dr. Mary Gyenac",
+    "serviceType": "Ultrasound",
+    "status": "cancelled",
+    "notes": "Patient cancelled due to illness."
+  }
+] 

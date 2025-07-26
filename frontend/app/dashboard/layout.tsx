@@ -3,6 +3,7 @@ import { DashboardNav } from "@/components/dashboard-nav"
 import { useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { auth } from "@/lib/firebase"
+import { useUserRole } from "@/hooks/useUserRole";
 
 export default function DashboardLayout({
   children,
@@ -10,15 +11,20 @@ export default function DashboardLayout({
   children: React.ReactNode
 }) {
   const router = useRouter()
+  const { role } = useUserRole(auth.currentUser);
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged((user) => {
       if (!user) {
         router.replace("/signup")
       }
+      // If patient, always redirect to /dashboard/profile after login
+      if (user && role === "patient" && window.location.pathname !== "/dashboard/profile") {
+        router.replace("/dashboard/profile");
+      }
     })
     return () => unsubscribe()
-  }, [router])
+  }, [router, role])
 
   return (
     <div className="h-full relative">

@@ -13,6 +13,11 @@ import {
   FileText,
   Syringe,
 } from "lucide-react"
+import { useEffect, useState } from "react";
+import { auth } from "@/lib/firebase";
+import { useUserRole } from "@/hooks/useUserRole";
+import { User } from "firebase/auth";
+import { MessageCircle, Calendar, AlarmClock } from "lucide-react";
 
 const routes = [
   {
@@ -58,12 +63,6 @@ const routes = [
     color: "text-red-500",
   },
   {
-    label: "Blogs",
-    icon: FileText,
-    href: "/blogs",
-    color: "text-rose-500",
-  },
-  {
     label: "Settings",
     icon: Settings,
     href: "/dashboard/settings",
@@ -72,13 +71,127 @@ const routes = [
 ]
 
 export function DashboardNav() {
-  const pathname = usePathname()
+  const pathname = usePathname();
+  const [user, setUser] = useState<User | null>(null);
+  useEffect(() => {
+    const unsubscribe = auth.onAuthStateChanged((firebaseUser) => {
+      setUser(firebaseUser as User | null);
+    });
+    return () => unsubscribe();
+  }, []);
+  const { role, loading } = useUserRole(user);
+
+  let navLinks: any[] = [];
+  if (loading || !role) {
+    navLinks = [];
+  } else if (role === "patient") {
+    navLinks = [
+      {
+        label: "Profile",
+        icon: LayoutDashboard,
+        href: "/dashboard/profile",
+        color: "text-sky-500",
+      },
+      {
+        label: "Medical Chatbot",
+        icon: MessageCircle,
+        href: "/dashboard/chatbot",
+        color: "text-pink-600",
+      },
+      {
+        label: "Book Appointment",
+        icon: Calendar,
+        href: "/dashboard/appointments",
+        color: "text-blue-600",
+      },
+      {
+        label: "View Appointments",
+        icon: Calendar,
+        href: "/dashboard/appointments/patient-page",
+        color: "text-blue-700",
+      },
+      {
+        label: "Reminders",
+        icon: Bell,
+        href: "/dashboard/appointments/patient-reminders",
+        color: "text-amber-600",
+      },
+      {
+        label: "Blogs",
+        icon: FileText,
+        href: "/blogs",
+        color: "text-rose-500",
+      },
+    ];
+  } else if (role === "clinician") {
+    navLinks = [
+      ...routes,
+      {
+        label: "Blogs",
+        icon: FileText,
+        href: "/blogs",
+        color: "text-rose-500",
+      },
+      {
+        label: "My Slots",
+        icon: Calendar,
+        href: "/dashboard/appointments/clinician-page",
+        color: "text-blue-800",
+      },
+    ];
+  } else if (role === "admin") {
+    navLinks = [
+      ...routes,
+      {
+        label: "Medical Chatbot",
+        icon: MessageCircle,
+        href: "/dashboard/chatbot",
+        color: "text-pink-600",
+      },
+      {
+        label: "Appointments",
+        icon: Calendar,
+        href: "/dashboard/appointments",
+        color: "text-blue-600",
+      },
+      {
+        label: "Blogs",
+        icon: FileText,
+        href: "/blogs",
+        color: "text-rose-500",
+      },
+      {
+        label: "Live Demo",
+        icon: Activity,
+        href: "/demo",
+        color: "text-pink-700",
+      },
+      {
+        label: "Manage Appointments",
+        icon: Calendar,
+        href: "/dashboard/appointments/admin-page",
+        color: "text-blue-800",
+      },
+      {
+        label: "Manage Reminders",
+        icon: AlarmClock,
+        href: "/dashboard/reminders/admin-page",
+        color: "text-amber-800",
+      },
+      {
+        label: "Manage Reports",
+        icon: FileText,
+        href: "/dashboard/reports/admin-page",
+        color: "text-emerald-800",
+      },
+    ];
+  }
 
   return (
-    <div className="space-y-4 py-4 flex flex-col h-full bg-white text-gray-900">
-      <div className="px-3 py-2 flex-1">
+    <div className="space-y-4 py-4 flex flex-col h-full text-gray-900">
+      <div className="px-3 py-2 flex-1 bg-white rounded-xl shadow-sm">
         <div className="space-y-1">
-          {routes.map((route) => (
+          {navLinks.map((route) => (
             <Link
               key={route.href}
               href={route.href}
@@ -96,5 +209,5 @@ export function DashboardNav() {
         </div>
       </div>
     </div>
-  )
+  );
 } 
