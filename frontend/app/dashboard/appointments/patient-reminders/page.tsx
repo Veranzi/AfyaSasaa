@@ -64,8 +64,8 @@ export default function PatientRemindersPage() {
                     <td className="px-4 py-2 border font-medium">{rem.message}</td>
                     <td className="px-4 py-2 border text-gray-500">{rem.sendAt?.toDate?.().toLocaleString?.() || String(rem.sendAt)}</td>
                     <td className="px-4 py-2 border text-xs">
-                      <span className={rem.sent ? "text-green-600 font-semibold" : "text-yellow-600 font-semibold"}>
-                        {rem.sent ? "Sent" : "Pending"}
+                      <span className={rem.sent ? "text-green-600 font-semibold flex items-center gap-1" : "text-yellow-600 font-semibold flex items-center gap-1"}>
+                        {rem.sent ? "✅ Sent" : "⏳ Pending"}
                       </span>
                     </td>
                   </tr>

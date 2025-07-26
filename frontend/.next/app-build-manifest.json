@@ -40,6 +40,11 @@
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/chunks/app/dashboard/appointments/patient-page/page.js"
+    ],
+    "/dashboard/appointments/patient-reminders/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/dashboard/appointments/patient-reminders/page.js"
     ]
   }
 }
